@@ -52,11 +52,17 @@ class ServerSetup {
             this.app.use(cors(corsOptions)); // Enable CORS middleware
             this.app.use(express.json()); // Parse incoming JSON requests
             this.app.use('/api', route);
+            this.app.use('/', (req, res) => {
+                res.send("Welcome to the server!");
+            })
 
             this.app.listen(this.PORT, '0.0.0.0', () => {
                 console.log(`✅ Server is running at http://localhost:${this.PORT}`);
             });
 
+
+            console.log("✅ Server setup successfully!");
+            
         } catch (error) {
             console.error("❌ Server connection failed!", error);
         }
