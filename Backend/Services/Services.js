@@ -36,7 +36,7 @@ class Services {
             const mailBody = {
                 to: userDetails?.email,
                 subject: "OTP for registration",
-                text: `Your OTP for registration is: ${otp}`
+                text: `Thanks for singing up in Chatty. Your OTP for registration is: ${otp}. Please use this OTP to complete the registration process.`
             }
 
             if(!mailBody?.to) {
