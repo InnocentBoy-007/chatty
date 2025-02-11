@@ -49,7 +49,7 @@ class Services {
                 await mailer.sentMail(mailBody.to, mailBody.subject, mailBody.text);
             }
 
-            return res.status(200).json({ message: "OTP sent successfully!" });
+            return res.status(200).json({ message: "OTP sent successfully!", accountId: newUser._id }); // store the account Id in the cookies
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "An unexpected error ocured while trying to singup!" });
@@ -57,7 +57,31 @@ class Services {
     }
 
     async login() {
+        const {accountDetails} = req.body;
+        if(!accountDetails || typeof accountDetails !== "object") return res.status(401).json({message: "The request body is either invalid or is not an object!"});
 
+        try {
+            // login using either email or phone
+            const isValidAccount = await UserModel.findOne({ $or: [
+                {email: accountDetails.email},
+                {phone: accountDetails.phone},
+            ]})
+
+            if(!isValidAccount) {
+                if(accountDetails.email) {
+                    return res.status(401).json({message: "Invalid email!"});
+                } else {
+                    return res.status(401).json({message: "Invalid phone!"});
+                }
+            }
+
+            // compare the password
+
+            return res.status(200).json({message: "Login successful!"});
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({message: "An unexpected error ocured while trying to login!"});
+        }
     }
 
 }
