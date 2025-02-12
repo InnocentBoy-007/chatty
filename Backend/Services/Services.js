@@ -24,9 +24,10 @@ class Services {
 
             const hashedPassword = await bcrypt.hash(userDetails.password, 10);
             const newUser = await UserModel.create({ ...userDetails, password: hashedPassword });
-            if(!newUser) return res.status(500).json({ message: "Failed to create user!" });
+            if (!newUser) return res.status(500).json({ message: "Failed to create user!" });
 
             const otp = Math.floor(100000 + Math.random() * 900000); // 6 digit otp
+            await newUser.updateOne({ otp, otpExpiresAt: Date.now() + 600000 }); // otp expires in 10 minutes
 
             /**
              * Send otp to the registered Email
@@ -39,13 +40,12 @@ class Services {
                 text: `Thanks for singing up in Chatty. Your OTP for registration is: ${otp}. Please use this OTP to complete the registration process.`
             }
 
-            if(!mailBody?.to) {
+            if (!mailBody?.to) {
                 await UserModel.deleteOne({ username: userDetails.username });
                 return res.status(401).json({ message: "Email is either mising or invalid" });
             } else {
-                // needs to configure the node mailer (later)
-                const mailer = new Mailer;
-                await newUser.updateOne({otp});
+                const mailer = new Mailer();
+                await newUser.updateOne({ otp });
                 await mailer.sentMail(mailBody.to, mailBody.subject, mailBody.text);
             }
 
@@ -56,31 +56,35 @@ class Services {
         }
     }
 
-    async login() {
-        const {accountDetails} = req.body;
-        if(!accountDetails || typeof accountDetails !== "object") return res.status(401).json({message: "The request body is either invalid or is not an object!"});
+    async login(req, res) {
+        const { accountDetails } = req.body;
+        if (!accountDetails || typeof accountDetails !== "object") return res.status(401).json({ message: "The request body is either invalid or is not an object!" });
 
         try {
             // login using either email or phone
-            const isValidAccount = await UserModel.findOne({ $or: [
-                {email: accountDetails.email},
-                {phone: accountDetails.phone},
-            ]})
+            const isValidAccount = await UserModel.findOne({
+                $or: [
+                    { email: accountDetails.email },
+                    { phone: accountDetails.phone },
+                ]
+            }).select("+password");
 
-            if(!isValidAccount) {
-                if(accountDetails.email) {
-                    return res.status(401).json({message: "Invalid email!"});
+            if (!isValidAccount?.email || !isValidAccount?.phone) {
+                if (accountDetails.email) {
+                    return res.status(401).json({ message: "Invalid email!" });
                 } else {
-                    return res.status(401).json({message: "Invalid phone!"});
+                    return res.status(401).json({ message: "Invalid phone!" });
                 }
             }
 
             // compare the password
+            const isValidPassword = await bcrypt.compare(accountDetails?.password, isValidAccount?.password);
+            if (!isValidPassword) return res.status(409).json({ message: "Incorrect password!" });
 
-            return res.status(200).json({message: "Login successful!"});
+            return res.status(200).json({ message: "Login successful!" });
         } catch (error) {
             console.error(error);
-            return res.status(500).json({message: "An unexpected error ocured while trying to login!"});
+            return res.status(500).json({ message: "An unexpected error ocured while trying to login!" });
         }
     }
 
