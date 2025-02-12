@@ -1,6 +1,7 @@
 import UserModel from '../Model/Model.js'
 import bcrypt from 'bcrypt'
 import { Mailer } from '../Components/Mailer.js';
+import Token from '../Components/JWT.js';
 
 class Services {
     async signUp(req, res) {
@@ -49,7 +50,9 @@ class Services {
                 await mailer.sentMail(mailBody.to, mailBody.subject, mailBody.text);
             }
 
-            return res.status(200).json({ message: "OTP sent successfully!", accountId: newUser._id }); // store the account Id in the cookies
+            const token = Token.generateToken({ accountId: newUser._id });
+
+            return res.status(200).json({ message: "OTP sent successfully!", token }); // store the account Id in the cookies as a token
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "An unexpected error ocured while trying to singup!" });
@@ -81,7 +84,9 @@ class Services {
             const isValidPassword = await bcrypt.compare(accountDetails?.password, isValidAccount?.password);
             if (!isValidPassword) return res.status(409).json({ message: "Incorrect password!" });
 
-            return res.status(200).json({ message: "Login successful!" });
+            const token = await Token.generateToken({ accountId: isValidAccount._id });
+
+            return res.status(200).json({ message: "Login successful!", token });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "An unexpected error ocured while trying to login!" });

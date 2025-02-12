@@ -62,7 +62,7 @@ class ServerSetup {
 
 
             console.log("✅ Server setup successfully!");
-            
+
         } catch (error) {
             console.error("❌ Server connection failed!", error);
         }
