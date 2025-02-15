@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import route from './Routes/Route.js';
+import account_route from './Routes/Account_Route.js';
 
 class ServerSetup {
     constructor() {
@@ -51,7 +51,7 @@ class ServerSetup {
 
             this.app.use(cors(corsOptions)); // Enable CORS middleware
             this.app.use(express.json()); // Parse incoming JSON requests
-            this.app.use('/api', route);
+            this.app.use('/api/account', account_route); // for login and signup routes
             this.app.use('/', (req, res) => {
                 res.send("Welcome to the server!");
             })
