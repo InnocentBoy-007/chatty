@@ -69,7 +69,7 @@ class Services {
             const isValidAccount = await UserModel.findOne({
                 $or: [
                     { email: loginCredentials.email },
-                    { phone: loginCredentials.phone },
+                    { phone: loginCredentials.phoneNo },
                 ]
             }).select("+password");
 

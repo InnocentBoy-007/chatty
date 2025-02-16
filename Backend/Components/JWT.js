@@ -16,7 +16,7 @@ class JsonWebToken {
         const token = authHeader && authHeader.split(' ')[1];
         if (!token) return res.status(401).json({ messag: "Access denied! Token is invalid!" });
         try {
-            const isValidToken = jwt.verify(token, this.jwtSecretKey);
+            const isValidToken = jwt.verify(token, process.env.jwtSecretKey);
             if (!isValidToken) return res.status(401).json({ message: "Incorrect token!" });
 
             req.accountId = isValidToken.accountId;

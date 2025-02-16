@@ -3,7 +3,7 @@ class PrimaryServices {
         if (!loginCredentials || typeof loginCredentials !== 'object') throw new Error("Invalid login credentials");
 
         // validation for email or phone number
-        if (!loginCredentials?.email && loginCredentials?.phoneNo) {
+        if (!loginCredentials?.email && !loginCredentials?.phoneNo) {
 
             // check if phone number is valid
             if (loginCredentials?.phoneNo || typeof loginCredentials?.phoneNo !== 'string') throw new Error("Invalid phone number or is not a string!");
@@ -55,7 +55,7 @@ class PrimaryServices {
                 // body: JSON.stringify() // remove the body if the body is empty
             });
 
-            const data = response.json();
+            const data = await response.json();
             const { message } = data;
 
             return { data: { message } };

@@ -5,6 +5,7 @@ import PrimaryServices from "../Services/PrimaryServices";
 
 export default function Homepage() {
   const primaryService = new PrimaryServices();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
   const logout_handler = async (e) => {
@@ -12,7 +13,6 @@ export default function Homepage() {
     setLoading(true);
 
     const token = cookie.get("token");
-    const navigate = useNavigate();
 
     const response = await primaryService.LogOut(token); // main service
 
