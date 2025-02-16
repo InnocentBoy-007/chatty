@@ -25,7 +25,7 @@ class PrimaryServices {
                     'Content-Type': 'application/json'
                     // add authorization here
                 },
-                body: JSON.stringify({ loginCredentials }),
+                body: JSON.stringify({ loginCredentials })
             });
 
             const data = await response.json();
@@ -38,8 +38,12 @@ class PrimaryServices {
         }
     }
 
-    async LogOut(logoutCredentials, token) {
+    async LogOut(token) {
         const endpoint_URL = import.meta.env.VITE_API_URL;
+
+        // validator
+        if (!token || typeof token !== 'string') throw new Error("Invalid token or type of token is not a string!");
+
         try {
             const response = await fetch(`${endpoint_URL}/account/logout`, {
                 method: 'POST',
@@ -47,7 +51,8 @@ class PrimaryServices {
                     'Content-Type': 'application/json',
                     'authorization': `Bearer ${token}` // needs token for logout
                 },
-                body: JSON.stringify({ logoutCredentials })
+                credentials: 'include',
+                // body: JSON.stringify() // remove the body if the body is empty
             });
 
             const data = response.json();

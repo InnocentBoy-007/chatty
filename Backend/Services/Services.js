@@ -2,6 +2,7 @@ import UserModel from '../Model/Model.js'
 import bcrypt from 'bcrypt'
 import { Mailer } from '../Components/Mailer.js';
 import Token from '../Components/JWT.js';
+import mongoose from 'mongoose';
 
 class Services {
     async signUp(req, res) {
@@ -90,6 +91,20 @@ class Services {
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "An unexpected error ocured while trying to login!" });
+        }
+    }
+
+    async logout(req, res) {
+        const isValidAccountId = req.accountId;
+        if (!isValidAccountId || !mongoose.Types.ObjectId.isValid(isValidAccountId)) return res.status(401).json({ message: "Invalid account Id!" });
+        try {
+            const isValidUser = await UserModel.findById(isValidAccountId);
+            if (!isValidUser) return res.status(404).json({ message: "User not found!" });
+
+            return res.status(200).json({ message: `Logout successfully, ${isValidUser?.title}${isValidUser?.username}!` });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "An unexpected error occured while trying to logout!" });
         }
     }
 
