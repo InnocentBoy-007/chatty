@@ -8,9 +8,7 @@ class JsonWebToken {
     }
 
     async generateToken(payload) {
-        const token = jwt.sign(payload, this.jwtSecretKey, { expiresIn: '1h' });
-
-        return token;
+        return jwt.sign(payload, this.jwtSecretKey, { expiresIn: '1h' });
     }
 
     async compareToken(req, res, next) {

@@ -59,21 +59,21 @@ class Services {
         }
     }
 
-    async login(req, res) {
-        const { accountDetails } = req.body;
-        if (!accountDetails || typeof accountDetails !== "object") return res.status(401).json({ message: "The request body is either invalid or is not an object!" });
+    async signIn(req, res) {
+        const { loginCredentials } = req.body;
+        if (!loginCredentials || typeof loginCredentials !== "object") return res.status(401).json({ message: "The request body is either invalid or is not an object!" });
 
         try {
             // login using either email or phone
             const isValidAccount = await UserModel.findOne({
                 $or: [
-                    { email: accountDetails.email },
-                    { phone: accountDetails.phone },
+                    { email: loginCredentials.email },
+                    { phone: loginCredentials.phone },
                 ]
             }).select("+password");
 
             if (!isValidAccount?.email || !isValidAccount?.phone) {
-                if (accountDetails.email) {
+                if (!loginCredentials.email) {
                     return res.status(401).json({ message: "Invalid email!" });
                 } else {
                     return res.status(401).json({ message: "Invalid phone!" });
@@ -81,7 +81,7 @@ class Services {
             }
 
             // compare the password
-            const isValidPassword = await bcrypt.compare(accountDetails?.password, isValidAccount?.password);
+            const isValidPassword = await bcrypt.compare(loginCredentials?.password, isValidAccount?.password);
             if (!isValidPassword) return res.status(409).json({ message: "Incorrect password!" });
 
             const token = await Token.generateToken({ accountId: isValidAccount._id });

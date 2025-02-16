@@ -4,7 +4,7 @@ import OTPconfirmation from '../Services/OTPconfirmation.js';
 
 const route = express.Router();
 route.post("/signup", services.signUp);
-route.post("/login", services.login);
+route.post("/signin", services.signIn);
 
 route.post("/account/otp-confirmation/:accountId", OTPconfirmation);
 
