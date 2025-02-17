@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import cookie from "js-cookie";
-import PrimaryServices from "../Services/PrimaryServices";
+import primaryServices from "../Services/PrimaryServices";
 
 export default function Homepage() {
-  const primaryService = new PrimaryServices();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -14,17 +13,17 @@ export default function Homepage() {
 
     const token = cookie.get("token");
 
-    const response = await primaryService.LogOut(token); // main service
+    const response = await primaryServices.LogOut(token); // main service
 
     // if the response is success, remove the cookie and the navigate the user to the signin page
-    if (response) {
+    if (response.success) {
+      window.alert(response?.data?.message);
       cookie.remove("token");
       setLoading(false);
       navigate("/");
-      console.log(response?.data?.message);
     } else {
+      window.alert(response?.data?.message);
       setLoading(false);
-      console.log(response?.message);
     }
   };
   return (

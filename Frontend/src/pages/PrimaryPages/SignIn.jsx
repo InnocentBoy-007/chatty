@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import cookie from "js-cookie";
-import PrimaryServices from "../../Services/PrimaryServices";
+import primaryServices from "../../Services/PrimaryServices";
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -11,10 +11,6 @@ export default function SignIn() {
   const [phoneNo, setPhoneNo] = useState("");
   const [password, setPassword] = useState("");
 
-  /**
-   * Function to check if the token is already inside the cookie or not
-   * If the token is already in the cookie, then navigate the user to a homepage
-   */
   useEffect(() => {
     const token = cookie.get("token");
     if (token) {
@@ -25,25 +21,20 @@ export default function SignIn() {
   const signInHandler = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const primaryService = new PrimaryServices();
 
-    try {
-      const response = await primaryService.SignIn({
-        email,
-        phoneNo,
-        password,
-      });
+    const response = await primaryServices.SignIn({ email, phoneNo, password });
+    if (response.success) {
+      window.alert(response?.data?.message)
+      setEmail("");
+      setPhoneNo("");
+      setLoading(false);
       cookie.set("token", response?.data?.token);
       navigate("/homepage");
-      console.log(response?.data?.message);
+    } else {
+      window.alert(response?.data?.message);
       setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      console.error(error);
-      if (error.response) {
-        console.log(error.response?.message);
-      }
     }
+
   };
 
   return (
@@ -73,7 +64,7 @@ export default function SignIn() {
                   setEmail("");
                 }
               }}
-              className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
               required
             />
           </div>
@@ -104,6 +95,7 @@ export default function SignIn() {
           <button
             type="submit"
             className="w-full bg-blue-600 text-white font-medium py-3 rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md"
+            disabled={loading}
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>

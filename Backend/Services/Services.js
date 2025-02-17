@@ -4,6 +4,8 @@ import { Mailer } from '../Components/Mailer.js';
 import Token from '../Components/JWT.js';
 import mongoose from 'mongoose';
 
+
+// need to handle the try-catch block elegantly, especially the throw and catch errors
 class Services {
     async signUp(req, res) {
         const { userDetails } = req.body;
@@ -73,6 +75,7 @@ class Services {
                 ]
             }).select("+password");
 
+            // I think this validation part is unnecessary since, it is already done in frontend
             if (!isValidAccount?.email || !isValidAccount?.phone) {
                 if (!loginCredentials.email) {
                     return res.status(401).json({ message: "Invalid email!" });
@@ -83,7 +86,7 @@ class Services {
 
             // compare the password
             const isValidPassword = await bcrypt.compare(loginCredentials?.password, isValidAccount?.password);
-            if (!isValidPassword) return res.status(409).json({ message: "Incorrect password!" });
+            if (!isValidPassword) return res.status(403).json({ message: "Incorrect password!" });
 
             const token = await Token.generateToken({ accountId: isValidAccount._id });
 

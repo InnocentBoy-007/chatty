@@ -1,50 +1,45 @@
 class PrimaryServices {
     async SignIn(loginCredentials) {
-        if (!loginCredentials || typeof loginCredentials !== 'object') throw new Error("Invalid login credentials");
-
-        // validation for email or phone number
-        if (!loginCredentials?.email && !loginCredentials?.phoneNo) {
-
-            // check if phone number is valid
-            if (loginCredentials?.phoneNo || typeof loginCredentials?.phoneNo !== 'string') throw new Error("Invalid phone number or is not a string!");
-
-            // check if email is valid
-            else if (loginCredentials?.email || typeof loginCredentials?.email !== 'string') throw new Error("Invalid email or type of email is not a string!");
-        }
-
-        // validation for password
-        if (!loginCredentials?.password || typeof loginCredentials?.password !== 'string') throw new Error("Invalid password or type of password is not a string!");
-
         // endpoint details
         const endpoint_URL = import.meta.env.VITE_API_URL;
 
         try {
+            // validators
+            if (!loginCredentials || typeof loginCredentials !== 'object') throw new Error("Invalid login credentials");
+            if (loginCredentials?.email && !loginCredentials?.email.includes('@gmail.com')) throw new Error("Invalid email!");
+            if (loginCredentials?.phoneNo && loginCredentials?.phoneNo.length < 10) throw new Error("Invalid phoneNo!");
+            if (!loginCredentials?.password || typeof loginCredentials?.password !== 'string') throw new Error("Invalid password or type of password is not a string!");
+
             const response = await fetch(`${endpoint_URL}/account/signin`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                    // add authorization here
                 },
                 body: JSON.stringify({ loginCredentials })
             });
 
             const data = await response.json();
-            const { message, token } = data;
-
-            return { data: { message, token } };
+            if (response.ok) {
+                return { data, success: true };
+            } else {
+                throw new Error(data?.message || 'Failed to sign in!');
+            }
         } catch (error) {
             console.error(error);
-            return { message: "An unexpected error ocured while trying to login!" };
+            if (error instanceof Error) {
+                return { data: { message: error?.message ?? "Login fail! Added from the frontend" }, success: false }
+            }
+            return { data: { message: "An unexpected error occured while trying to login!" }, success: false };
         }
     }
 
     async LogOut(token) {
         const endpoint_URL = import.meta.env.VITE_API_URL;
 
-        // validator
-        if (!token || typeof token !== 'string') throw new Error("Invalid token or type of token is not a string!");
-
         try {
+            // validator
+            if (!token || typeof token !== 'string') throw new Error("Invalid token or type of token is not a string!");
+
             const response = await fetch(`${endpoint_URL}/account/logout`, {
                 method: 'POST',
                 headers: {
@@ -56,12 +51,17 @@ class PrimaryServices {
             });
 
             const data = await response.json();
-            const { message } = data;
 
-            return { data: { message } };
+            if (response.ok) {
+                return { data, success: true }
+            } else {
+                throw new Error(data?.message || 'Failed to log out!');
+            }
         } catch (error) {
-            console.error(error);
-            return { message: "An unexpected error ocured while trying to logout!" };
+            if (error instanceof Error) {
+                return { data: { message: error.message } }
+            }
+            return { data: { message: "An unexpected error ocured while trying to logout!" } };
         }
     }
 
@@ -74,4 +74,5 @@ class PrimaryServices {
     }
 }
 
-export default PrimaryServices;
+const primaryServices = new PrimaryServices();
+export default primaryServices;
