@@ -24,7 +24,7 @@ export default function SignIn() {
 
     const response = await primaryServices.SignIn({ email, phoneNo, password });
     if (response.success) {
-      window.alert(response?.data?.message)
+      window.alert(response?.data?.message);
       setEmail("");
       setPhoneNo("");
       setLoading(false);
@@ -34,7 +34,6 @@ export default function SignIn() {
       window.alert(response?.data?.message);
       setLoading(false);
     }
-
   };
 
   return (
@@ -56,15 +55,19 @@ export default function SignIn() {
               id="emailorphone"
               value={email || phoneNo}
               onChange={(e) => {
-                if (e.target.value.includes("@")) {
-                  setEmail(e.target.value);
+                const input = e.target.value.trim();
+
+                if (/^\D/.test(input) || input.includes("@")) {
+                  // If the first character is NOT a number OR contains '@', treat it as an email
+                  setEmail(input);
                   setPhoneNo("");
                 } else {
-                  setPhoneNo(e.target.value);
+                  // Otherwise, treat it as a phone number
+                  setPhoneNo(input);
                   setEmail("");
                 }
               }}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
+              className="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>

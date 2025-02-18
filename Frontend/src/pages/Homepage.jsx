@@ -17,8 +17,8 @@ export default function Homepage() {
 
     // if the response is success, remove the cookie and the navigate the user to the signin page
     if (response.success) {
-      window.alert(response?.data?.message);
       cookie.remove("token");
+      window.alert(response?.data?.message);
       setLoading(false);
       navigate("/");
     } else {
