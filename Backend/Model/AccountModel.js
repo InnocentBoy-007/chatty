@@ -31,12 +31,6 @@ const userSchema = new mongoose.Schema({
     },
     updatedAt: {
         type: String
-    },
-    otp: {
-        type: String
-    }, 
-    otpExpiresAt: {
-        type: String
     }
 });
 

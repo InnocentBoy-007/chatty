@@ -8,7 +8,7 @@ class ServerSetup {
     constructor() {
         dotenv.config();
 
-        this.PORT = 8000;
+        this.PORT = 9000;
         this.MONGODB_URL = process.env.MONGODB_URL;
         this.ORIGIN = process.env.ORIGIN;
 
@@ -55,6 +55,13 @@ class ServerSetup {
             this.app.use('/', (req, res) => {
                 res.send("Welcome to the server!");
             })
+
+            // global error handler
+            this.app.use((error, req, res, next) => {
+                error.status = error.status || 500;
+                error.message = error.message || "An unexpected error occured!";
+                res.status(error.status).json({ message: error.message });
+            });
 
             this.app.listen(this.PORT, '0.0.0.0', () => {
                 console.log(`✅ Server is running at http://localhost:${this.PORT}`);

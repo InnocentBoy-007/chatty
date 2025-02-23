@@ -17,9 +17,7 @@ class PrimaryServices {
 
             const response = await fetch(`${endpoint_URL}/account/signin`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ loginCredentials })
             });
 
@@ -29,6 +27,7 @@ class PrimaryServices {
             }
 
             const data = await response.json();
+
             return { data: { message: data?.message, token: data?.token }, success: true };
         } catch (error) {
             if (error instanceof Error) {

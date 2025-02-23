@@ -1,38 +1,49 @@
-import UserModel from '../Model/Model.js'
+import UserModel from '../Model/AccountModel.js'
+import OTPModel from '../Model/OTPmodel.js'
 import bcrypt from 'bcrypt'
-import { Mailer } from '../Components/Mailer.js';
+import mailer from '../Components/Mailer.js';
 import Token from '../Components/JWT.js';
 import mongoose from 'mongoose';
-
+import ThrowError from '../Components/ErrorHandler.js';
 
 // need to handle the try-catch block elegantly, especially the throw and catch errors
 class Services {
-    async signUp(req, res) {
-        const { userDetails } = req.body;
-        if (!userDetails || typeof userDetails !== 'object') return res.status(401).json({ message: "Invalid request body(userDetails)!" });
-
-        const requiredFields = ["username", "gender", "password", "age", "email"];
-        const missingFields = requiredFields.filter(field => !userDetails?.[field]);
-
-        if (missingFields.length > 0) {
-            return res.status(401).json({ message: `Missing required fields: ${missingFields.join(", ")}` });
-        }
-
+    // signUp method's code is well optimised
+    async signUp(req, res, next) {
         try {
-            const userDuplicate = await UserModel.findOne({ username: userDetails.username });
-            if (userDuplicate) {
-                if (userDuplicate.username === userDetails.username) return res.status(401).json({ message: "Username already exists!" });
-
-                if (userDuplicate.email === userDetails.email) return res.status(401).json({ message: "Email already exists!" });
+            const { userDetails } = req.body;
+            if (!userDetails || typeof userDetails !== 'object') {
+                ThrowError("Invalid request body(userDetails)!", 401);
             }
 
-            const hashedPassword = await bcrypt.hash(userDetails.password, 10);
-            const newUser = await UserModel.create({ ...userDetails, password: hashedPassword });
-            if (!newUser) return res.status(500).json({ message: "Failed to create user!" });
+            if(userDetails?.phone.length !== 10) ThrowError("Invalid phone number!", 401); // phone number should be 10 digits (validator)
 
-            const otp = Math.floor(100000 + Math.random() * 900000); // 6 digit otp
-            await newUser.updateOne({ otp, otpExpiresAt: Date.now() + 600000 }); // otp expires in 10 minutes
+            const requiredFields = ["username", "gender", "password", "age", "email", "phone"];
+            const missingFields = requiredFields.filter(field => !userDetails?.[field]); // it returns an array
 
+            if (missingFields.length > 0) {
+                ThrowError(`Missing required fields: ${missingFields.join(", ")}`, 401);
+            }
+
+            const isUserDuplicate = await UserModel.findOne({
+                $or: [
+                    { username: userDetails.username },
+                    { email: userDetails.email },
+                    { phone: userDetails.phone }
+                ]
+            });
+
+            const inputFields = ["username", "email", "phone"]; // fields that are required to be unique
+            if (isUserDuplicate) {
+                const duplicateField = inputFields.find(field => userDetails[field] === isUserDuplicate[field]); // find() returns the first matching element/ the first element that specifies the condition
+                ThrowError(`${duplicateField} is already taken!`, 401);
+            }
+
+            const newUser = await UserModel.create({ ...userDetails, password: await bcrypt.hash(userDetails.password, 10) });
+            if (!newUser) ThrowError("Failed to create user!", 500);
+
+            const otp = Math.floor(100000 + Math.random() * 900000); // 6 digit password
+            await OTPModel.create({ otp, expiresAt: Date.now() + 600000 }); 
             /**
              * Send otp to the registered Email
              * If the otp is wrong delete the entire user schema from the database
@@ -44,21 +55,19 @@ class Services {
                 text: `Thanks for singing up in Chatty. Your OTP for registration is: ${otp}. Please use this OTP to complete the registration process.`
             }
 
-            if (!mailBody?.to) {
-                await UserModel.deleteOne({ username: userDetails.username });
-                return res.status(401).json({ message: "Email is either mising or invalid" });
-            } else {
-                const mailer = new Mailer();
-                await newUser.updateOne({ otp });
-                await mailer.sentMail(mailBody.to, mailBody.subject, mailBody.text);
+            const mailerResponse = await mailer.sentMail(mailBody.to, mailBody.subject, mailBody.text);
+            if (mailerResponse.error) { // if the mailerResponse has an error
+                await newUser.deleteOne(); // delete the user schema from the database
+                await OTPModel.deleteOne(); // delete the otp schema from the database
+                ThrowError(mailerResponse.error, 500);
             }
 
-            const token = Token.generateToken({ accountId: newUser._id });
-
-            return res.status(200).json({ message: "OTP sent successfully!", token }); // store the account Id in the cookies as a token
+            return res.status(200).json({ message: `OTP is sent to ${newUser.email}`, token: await Token.generateToken({ accountId: newUser._id }) }); // store the account Id in the cookies as a token
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ message: "An unexpected error ocured while trying to singup!" });
+            if (error instanceof Error) {
+                return next(error);
+            }
         }
     }
 
@@ -82,7 +91,7 @@ class Services {
             }
 
             // compare the password
-            const isValidPassword = await bcrypt.compare(password, isValidAccount?.password);
+            const isValidPassword = await bcrypt.compare(password, isValidAccount?.passwo
             if (!isValidPassword) {
                 const error = new Error("Incorrect password!");
                 error.statusCode = 409;
