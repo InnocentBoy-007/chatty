@@ -12,20 +12,18 @@ class PrimaryServices {
 
             const response = await fetch(`${endpoint_URL}/account/signin`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ loginCredentials })
             });
 
-            const data = await response.json();
-            if (response.ok) {
-                return { data, success: true };
-            } else {
-                throw new Error(data?.message || 'Failed to sign in!');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData?.message);
             }
+
+            const data = await response.json();
+            return { data: { message: response?.message }, success: true }
         } catch (error) {
-            console.error(error);
             if (error instanceof Error) {
                 return { data: { message: error?.message ?? "Login fail! Added from the frontend" }, success: false }
             }

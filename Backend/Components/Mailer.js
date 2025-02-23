@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer'
 import dotenv from 'dotenv'
 
-export class Mailer {
+class Mailer {
     constructor() {
         dotenv.config();
         this.user = process.env.SENDERMAIL;
@@ -9,8 +9,8 @@ export class Mailer {
         this.from = process.env.MAILFROM;
         this.transporter = null;
     }
-    
-    // setUp is already called in sentMail method
+
+    // setUp method is to be called in sentMail method
     async setUp() {
         try {
             const transporter = nodemailer.createTransport({
@@ -21,26 +21,37 @@ export class Mailer {
                 }
             })
             this.transporter = transporter;
+            if (!transporter) {
+                const error = new Error("Failed to create transporter");
+                throw error;
+            }
         } catch (error) {
             console.log(error);
-            throw error;
+            if (error instanceof Error) {
+                console.error(error.message);
+            }
         }
     }
 
     // only sentMail method is to be used 
     async sentMail(to, subject, text) {
-        await this.setUp();
-        try {
-            const info = await this.transporter.sendMail({
-                from: this.from,
-                to: to,
-                subject: subject,
-                text: text
-            })
-            return info;
-        } catch (error) {
-            console.log(error);
-            throw error;
+        await this.setUp(); // initialize the transporter
+        // Check if email was accepted and contains @gmail.com
+        const info = await this.transporter.sendMail({
+            from: this.from,
+            to: to,
+            subject: subject,
+            text: text
+        });
+
+        // Check if email was accepted and contains @gmail.com
+        const recipient = info.accepted[0]; // Get the first accepted email
+        if (!recipient || !recipient.includes("@gmail.com")) {
+            return { error: "Invalid email addresss!" };
         }
+        return info;
     }
 }
+
+const mailer = new Mailer();
+export default mailer;
