@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import UserModel from '../Model/AccountModel.js'
 
+// this needs to be reviewed
 const OTPconfirmation = async (req, res) => {
     try {
         const { accountId } = req.params;
