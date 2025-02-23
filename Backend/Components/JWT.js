@@ -11,20 +11,31 @@ class JsonWebToken {
         return jwt.sign(payload, this.jwtSecretKey, { expiresIn: '1h' });
     }
 
+    // optimized codes
     async compareToken(req, res, next) {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
-        if (!token) return res.status(401).json({ messag: "Access denied! Token is invalid!" });
         try {
+            if (!token) {
+                const error = new Error("Access denied! Token is invalid");
+                error.statusCode = 401;
+                throw error;
+            };
+
             const isValidToken = jwt.verify(token, process.env.jwtSecretKey);
-            if (!isValidToken) return res.status(401).json({ message: "Incorrect token!" });
+            if (!isValidToken) {
+                const error = new Error("Incorrect token!")
+                error.statusCode(401);
+                throw error;
+            };
 
             req.accountId = isValidToken.accountId;
-
             next();
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ message: "An unexpected error occured while trying to verify the token!" });
+            if (error instanceof Error) {
+                return res.status(error.statusCode || 500).json({ message: error.message || "An unexpected error occured while trying to verify the token!" })
+            }
         }
     }
 }

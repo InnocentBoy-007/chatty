@@ -71,6 +71,7 @@ class Services {
         }
     }
 
+    // optimized codes
     async signIn(req, res) {
         const { email, phoneNo, password } = req.body?.loginCredentials ?? {};
 
@@ -83,39 +84,55 @@ class Services {
                 ]
             }).select("+password");
 
-            // I think this validation part is unnecessary since, it is already done in frontend
-            if (!isValidAccount?.email || !isValidAccount?.phone) {
-                if (!loginCredentials.email) {
-                    return res.status(401).json({ message: "Invalid email!" });
-                } else {
-                    return res.status(401).json({ message: "Invalid phone!" });
-                }
+            if (!isValidAccount) {
+                const error = new Error(email ? 'There is no account with this email!' : 'This is no account with this phone number!');
+                error.statusCode = 404;
+                throw error;
             }
 
             // compare the password
-            const isValidPassword = await bcrypt.compare(password, isValidAccount?.password);
-            if (!isValidPassword) return res.status(403).json({ message: "Incorrect password!" });
+            const isValidPassword = await bcrypt.compare(password, isValidAccount?.passwo
+            if (!isValidPassword) {
+                const error = new Error("Incorrect password!");
+                error.statusCode = 409;
+                throw error;
+            }
 
             const token = await Token.generateToken({ accountId: isValidAccount._id });
 
             return res.status(200).json({ message: "Login successful!", token });
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ message: "An unexpected error ocured while trying to login!" });
+            if (error instanceof Error) {
+                return res.status(error.statusCode || 500).json({ message: error.message || "An unexpected error occured while trying to log you in!" });
+            }
         }
     }
 
+    // optimized codes
     async logout(req, res) {
-        const isValidAccountId = req.accountId;
-        if (!isValidAccountId || !mongoose.Types.ObjectId.isValid(isValidAccountId)) return res.status(401).json({ message: "Invalid account Id!" });
+        const isValidAccountId = req.accountId; // coming from the authentication middleware
         try {
+            // validator
+            if (!isValidAccountId || !mongoose.Types.ObjectId.isValid(isValidAccountId)) {
+                const error = new Error("Invalid account Id!");
+                error.statusCode = 401;
+                throw error;
+            }
+
             const isValidUser = await UserModel.findById(isValidAccountId);
-            if (!isValidUser) return res.status(404).json({ message: "User not found!" });
+            if (!isValidUser) {
+                const error = new Error("User not found!");
+                error.statusCode(404);
+                throw error;
+            }
 
             return res.status(200).json({ message: `Logout successfully, ${isValidUser?.title}${isValidUser?.username}!` });
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ message: "An unexpected error occured while trying to logout!" });
+            if (error instanceof Error) {
+                return res.status(error.statusCode || 500).json({ message: error.message || "An unexpected error occured while trying to log you out!" });
+            }
         }
     }
 
