@@ -91,7 +91,7 @@ class Services {
             }
 
             // compare the password
-            const isValidPassword = await bcrypt.compare(password, isValidAccount?.passwo
+            const isValidPassword = await bcrypt.compare(password, isValidAccount?.password);
             if (!isValidPassword) {
                 const error = new Error("Incorrect password!");
                 error.statusCode = 409;
