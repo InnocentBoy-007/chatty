@@ -1,5 +1,5 @@
 import express from 'express'
-import services from '../Services/Services.js';
+import services from '../Services/AccountServices.js';
 import Token from '../Components/JWT.js';
 import OTPconfirmation from '../Services/OTPconfirmation.js';
 
@@ -10,6 +10,6 @@ route.post("/signup", services.signUp);
 route.post("/signin", services.signIn);
 route.post("/logout", Token.compareToken, services.logout);
 
-route.post("/account/otp-confirmation/:accountId", OTPconfirmation);
+route.post("/otp-confirmation/:otpID", Token.compareToken, OTPconfirmation);
 
 export default route;

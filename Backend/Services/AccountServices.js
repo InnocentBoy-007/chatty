@@ -4,25 +4,28 @@ import bcrypt from 'bcrypt'
 import mailer from '../Components/Mailer.js';
 import Token from '../Components/JWT.js';
 import mongoose from 'mongoose';
-import ThrowError from '../Components/ErrorHandler.js';
+import CustomError from '../Components/CustomError.js';
 
 // need to handle the try-catch block elegantly, especially the throw and catch errors
+// use jwt to temporarily manage the user credentials before they are actually stored in the database
 class Services {
     // signUp method's code is well optimised
+
+    // parse the incoming password
     async signUp(req, res, next) {
         try {
             const { userDetails } = req.body;
             if (!userDetails || typeof userDetails !== 'object') {
-                ThrowError("Invalid request body(userDetails)!", 401);
+                throw new CustomError("Invalid user details!", 401);
             }
 
-            if(userDetails?.phone.length !== 10) ThrowError("Invalid phone number!", 401); // phone number should be 10 digits (validator)
+            if (userDetails?.phoneNo.length !== 10) throw new CustomError("Invalid phone number!", 401); // phone number should be 10 digits (validator)
 
-            const requiredFields = ["username", "gender", "password", "age", "email", "phone"];
+            const requiredFields = ["username", "gender", "password", "age", "email", "phoneNo"];
             const missingFields = requiredFields.filter(field => !userDetails?.[field]); // it returns an array
 
             if (missingFields.length > 0) {
-                ThrowError(`Missing required fields: ${missingFields.join(", ")}`, 401);
+                throw new CustomError(`Missing required fields: ${missingFields.join(", ")}`, 401);
             }
 
             const isUserDuplicate = await UserModel.findOne({
@@ -36,18 +39,14 @@ class Services {
             const inputFields = ["username", "email", "phone"]; // fields that are required to be unique
             if (isUserDuplicate) {
                 const duplicateField = inputFields.find(field => userDetails[field] === isUserDuplicate[field]); // find() returns the first matching element/ the first element that specifies the condition
-                ThrowError(`${duplicateField} is already taken!`, 401);
+                throw new CustomError(`${duplicateField} is already taken!`, 401);
             }
 
-            const newUser = await UserModel.create({ ...userDetails, password: await bcrypt.hash(userDetails.password, 10) });
-            if (!newUser) ThrowError("Failed to create user!", 500);
-
-            const otp = Math.floor(100000 + Math.random() * 900000); // 6 digit password
-            await OTPModel.create({ otp, expiresAt: Date.now() + 600000 }); 
-            /**
-             * Send otp to the registered Email
-             * If the otp is wrong delete the entire user schema from the database
-             */
+            const otp = Math.floor(100000 + Math.random() * 900000); // 6 digit otp
+            const newOTP = await OTPModel.create(
+                { otp, expiresAt: new Date(Date.now() + 60000) } // otp expires at 1 mins
+            );
+            if (!newOTP) throw new CustomError("Failed to create OTP!", 500);
 
             const mailBody = {
                 to: userDetails?.email,
@@ -56,18 +55,24 @@ class Services {
             }
 
             const mailerResponse = await mailer.sentMail(mailBody.to, mailBody.subject, mailBody.text);
-            if (mailerResponse.error) { // if the mailerResponse has an error
-                await newUser.deleteOne(); // delete the user schema from the database
+            if (mailerResponse.error) {
                 await OTPModel.deleteOne(); // delete the otp schema from the database
-                ThrowError(mailerResponse.error, 500);
+                throw new CustomError(mailerResponse.error, 500);
             }
 
-            return res.status(200).json({ message: `OTP is sent to ${newUser.email}`, token: await Token.generateToken({ accountId: newUser._id }) }); // store the account Id in the cookies as a token
+            userDetails.password = await bcrypt.hash(userDetails.password, 10); // hash the password
+
+            // send the account credentials as JWT but not the otpID, just fckng return the otpID as an object
+            return res.status(200).json(
+                {
+                    message: `OTP is sent to ${userDetails.email}`,
+                    token: await Token.generateToken({ userDetails }), // send the account credentials along with the OTP Id to the frontend in JWT format
+                    otpID: newOTP._id
+                }
+            );
         } catch (error) {
             console.error(error);
-            if (error instanceof Error) {
-                return next(error);
-            }
+            next(error); // pass the error to the error handler middleware (global error handler)
         }
     }
 

@@ -38,7 +38,7 @@ class ServerSetup {
             // CORS setup
             const corsOptions = {
                 origin: (origin, callback) => {
-                    if (origin === this.ORIGIN || !origin) {
+                    if (origin === this.ORIGIN) {
                         callback(null, true);
                     } else {
                         callback(new Error('Not allowed by CORS'));
@@ -56,11 +56,21 @@ class ServerSetup {
                 res.send("Welcome to the server!");
             })
 
-            // global error handler
-            this.app.use((error, req, res, next) => {
-                error.status = error.status || 500;
-                error.message = error.message || "An unexpected error occured!";
-                res.status(error.status).json({ message: error.message });
+            // Global error handler middleware
+            this.app.use((err, req, res, next) => {
+                console.error(err.stack); // Log the error for debugging
+
+                // Default error response
+                const statusCode = err.statusCode || 500;
+                const message = err.message || 'Internal Server Error';
+
+                // Send the error response
+                res.status(statusCode).json({
+                    success: false,
+                    message: message,
+                    // In JavaScript, exceptions hold a stack property that contains the stack from the place where the exception was thrown.
+                    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined, // Include stack trace only in development
+                });
             });
 
             this.app.listen(this.PORT, '0.0.0.0', () => {

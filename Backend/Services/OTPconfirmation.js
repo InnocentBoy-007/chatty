@@ -1,31 +1,36 @@
 import mongoose from "mongoose";
+import Token from "../Components/JWT.js";
+import OTPmodel from "../Model/OTPmodel.js";
+import CustomError from "../Components/CustomError.js";
 import UserModel from '../Model/AccountModel.js'
 
 // this needs to be reviewed
-const OTPconfirmation = async (req, res) => {
+const OTPconfirmation = async (req, res, next) => {
     try {
-        const { accountId } = req.params;
-        if (!accountId || !mongoose.Types.ObjectId.isValid(accountId)) return res.status(401).json({ message: "Invalid account Id!" });
+        const { otpID } = req.params;
+        if (!otpID || !mongoose.Types.ObjectId.isValid(otpID)) throw new CustomError("Invalid OTP Id!", 401);
 
-        const { otp } = req.body;
-        if (!otp || typeof otp !== "string") return res.status(401).json({ message: "Invalid otp!" });
-        const isValidAccount = await UserModel.findById(accountId);
-        if (!isValidAccount) return res.status(401).json({ message: "Invalid account Id!" });
+        const { otp, accountCredentials } = req.body;
 
-        // if everything goes wrong in the backend while confirming the otp, remove the cookies in the frontend
-        if (Date.now() > isValidAccount?.otpExpiresAt) {
-            await isValidAccount.deleteOne();
-            return res.status(401).json({ message: "OTP has expired! Please request a new OTP!" });
-        } else if (isValidAccount.otp !== otp) {
-            return res.status(401).json({ message: "Invalid OTP!" });
-        }
+        if (!otp || typeof otp !== "string") throw new CustomError("Invalid OTP!", 401);
 
-        await isValidAccount.updateOne({ otp: undefined, otpExpiresAt: undefined });
+        const isValidOTP = await OTPmodel.findById(otpID);
+        if (!isValidOTP) throw new CustomError("Invalid otp or otp has expired!", 401);
 
-        return res.status(200).json({ message: "OTP confirmed successfully!" });
+        if (otp !== isValidOTP.otp) throw new CustomError("Invalid OTP!", 401);
+
+        // if everything goes right, create an account using the user's details
+        const newUser = await UserModel.create({ ...accountCredentials });
+        if (!newUser) throw new CustomError("An error occured while trying to create your account!", 500);
+
+        await isValidOTP.deleteOne(); // delete the OTP after account creation
+
+        const token = await Token.generateToken({ userID: newUser._id });
+
+        return res.status(201).json({ message: "Account created successfully!", token });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: "An unexpected error ocured while trying to confirm the otp!" });
+        next(error);
     }
 }
 
