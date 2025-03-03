@@ -34,4 +34,4 @@ const OTPconfirmation = async (req, res, next) => {
     }
 }
 
-export default OTPconfirmation;
+export default otpConfirmation_service;

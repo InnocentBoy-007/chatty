@@ -1,5 +1,5 @@
-import UserModel from '../Model/AccountModel.js'
-import OTPModel from '../Model/OTPmodel.js'
+import UserModel from '../Model/AccountModel.model.js'
+import OTPModel from '../Model/OTPmodel.model.js'
 import bcrypt from 'bcrypt'
 import mailer from '../Components/Mailer.js';
 import Token from '../Components/JWT.js';
@@ -132,6 +132,8 @@ class Services {
                 throw error;
             }
 
+            res.cookie("jwt", "", {maxAge: 0}); // this removes the cookie
+
             return res.status(200).json({ message: `Logout successfully, ${isValidUser?.title}${isValidUser?.username}!` });
         } catch (error) {
             console.error(error);
@@ -141,7 +143,11 @@ class Services {
         }
     }
 
+    async updateDP(req, res) {
+        // to update profile pic
+    }
+
 }
 
 const services = new Services();
-export default services;
+export default account_service;
