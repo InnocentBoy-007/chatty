@@ -1,13 +1,64 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom';
+import Cookie from 'js-cookie'
 
 export default function SignUp() {
-  const signUpHandler = async(e) => {
+  const navigate = useNavigate();
+
+  // hooks
+  const [loading, setLoading] = useState(false);
+  const [userData, setUserData] = useState({
+    username: "",
+    email: "",
+    address: "",
+    password: "",
+    phoneNo: "",
+    gender: "",
+    age: ""
+  });
+
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const signUpHandler = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
+    if (userData.password !== confirmPassword) return alert("Password does not match!");
 
     try {
-      
+      const response = await fetch("http://localhost:9000/api/account/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userDetails: userData }),
+      });
+
+      if (!response.ok) {
+        setLoading(false);
+        const errorData = await response.json();
+        alert(errorData.message);
+        navigate("/signup");
+      }
+
+      setLoading(false);
+      setUserData({
+        username: "",
+        email: "",
+        address: "",
+        password: "",
+        confirmPassword: "",
+        phoneNo: "",
+        gender: "",
+        age: ""
+      });
+      const data = await response.json();
+      alert(data.message);
+      Cookie.set("credentials", data.token);
+      Cookie.set("otpID", data.otpID); // remove it once it is resend back to the backend
+      navigate("/signup/confirmOTP");
     } catch (error) {
-      
+      console.error(error);
     }
   }
   return (
@@ -110,12 +161,9 @@ export default function SignUp() {
               <input
                 type="password"
                 id="confirmPassword"
-                value={userData.confirmPassword}
+                value={confirmPassword}
                 onChange={(e) =>
-                  setUserData((prevUserData) => ({
-                    ...prevUserData,
-                    confirmPassword: e.target.value,
-                  }))
+                  setConfirmPassword(e.target.value)
                 }
                 className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
                 required
@@ -207,7 +255,7 @@ export default function SignUp() {
               type="submit"
               className="w-full bg-blue-500 text-white font-semibold py-2 rounded-md hover:bg-blue-600 transition duration-200"
             >
-              {laoding ? "signing up..." : "sign up"}
+              {loading ? "signing up..." : "sign up"}
             </button>
           </form>
           <p className="text-sm text-gray-500 mt-5">
