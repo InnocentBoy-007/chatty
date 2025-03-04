@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import account_route from './Routes/Account_Route.js';
 import message_route from './Routes/Message.route.js';
+import { app, server } from './lib/socket.js';
 
 class ServerSetup {
     constructor() {
@@ -18,7 +19,7 @@ class ServerSetup {
             process.exit(1);
         }
 
-        this.app = express();
+        this.app = app;
     }
 
     // Use MongoDB Atlas (cloud-based) for database
@@ -75,7 +76,7 @@ class ServerSetup {
                 });
             });
 
-            this.app.listen(this.PORT, '0.0.0.0', () => {
+            server.listen(this.PORT, '0.0.0.0', () => {
                 console.log(`✅ Server is running at http://localhost:${this.PORT}`);
             });
 

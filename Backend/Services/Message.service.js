@@ -2,7 +2,7 @@ import UserModel from '../Model/AccountModel.model.js'
 import MessageModel from '../Model/Message.model.js'
 
 class Services {
-    async getUsers(req, res) {
+    async getUsers(req, res, next) {
         try {
             const loggedInUserId = req.user.id;
             const activeUsers = await UserModel.find({ _id: { $ne: loggedInUserId } });
@@ -10,11 +10,11 @@ class Services {
             return res.status(200).json(activeUsers);
         } catch (error) {
             console.error(error);
-
+            next(error);
         }
     }
 
-    async getMessage(req, res) {
+    async getMessage(req, res, next) {
         try {
             const { id: userToChatId } = req.params;
             const senderId = req.accountId;
@@ -29,11 +29,11 @@ class Services {
             return res.status(200).json(messages);
         } catch (error) {
             console.error(error);
-
+            next(error);
         }
     }
 
-    async sendMessage(req, res) {
+    async sendMessage(req, res, next) {
         try {
             const {text, image} = req.body;
             const {id: receiverId} = req.params;
@@ -53,7 +53,7 @@ class Services {
             return res.status(201).json(newMessage);
         } catch (error) {
             console.error(error);
-            
+            next(error);
         }
     }
 }
