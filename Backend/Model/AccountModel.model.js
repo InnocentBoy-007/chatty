@@ -24,6 +24,8 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     title: {type:String},
+    
+    // change the age to DOB
     age: {
         type: Number,
         required: true

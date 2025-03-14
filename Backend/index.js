@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import account_route from './Routes/Account_Route.js';
+import account_route from './Routes/Account_Route.route.js';
 import message_route from './Routes/Message.route.js';
 import { app, server } from './lib/socket.js';
 
@@ -18,8 +18,6 @@ class ServerSetup {
             console.error("❌ MONGODB_URL is not defined in .env file!");
             process.exit(1);
         }
-
-        this.app = app;
     }
 
     // Use MongoDB Atlas (cloud-based) for database
@@ -51,16 +49,16 @@ class ServerSetup {
                 allowedHeaders: ['Content-Type', 'Authorization'],
             };
 
-            this.app.use(cors(corsOptions)); // Enable CORS middleware
-            this.app.use(express.json()); // Parse incoming JSON requests
-            this.app.use('/api/account', account_route); // for login and signup routes
-            this.app.use('/api/message', message_route); // route for sending and receiving messages
-            this.app.use('/', (req, res) => {
+            app.use(cors(corsOptions)); // Enable CORS middleware
+            app.use(express.json()); // Parse incoming JSON requests
+            app.use('/api/account', account_route); // for login and signup routes
+            app.use('/api/message', message_route); // route for sending and receiving messages
+            app.use('/', (req, res) => {
                 res.send("Welcome to the server!");
             })
 
             // Global error handler middleware
-            this.app.use((err, req, res, next) => {
+            app.use((err, req, res, next) => {
                 console.error(err.stack); // Log the error for debugging
 
                 // Default error response

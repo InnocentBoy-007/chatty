@@ -1,9 +1,25 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom"; // Import useLocation
 import { useAuthStore } from "../store/useAuthStore";
 import { LogOut, MessageSquare, Settings, User } from "lucide-react";
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Track if settings page is open
+  const navigate = useNavigate(); // Hook for navigation
+  const location = useLocation(); // Hook to get current location
+
+  const handleSettingsClick = () => {
+    if (location.pathname === "/settings") {
+      // If already on the settings page, navigate back
+      navigate(-1);
+      setIsSettingsOpen(false); // Reset state
+    } else {
+      // Navigate to the settings page
+      navigate("/settings");
+      setIsSettingsOpen(true); // Set state to indicate settings page is open
+    }
+  };
 
   return (
     <header
@@ -22,16 +38,17 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link
-              to={"/settings"}
+            <button
+              onClick={handleSettingsClick}
               className={`
               btn btn-sm gap-2 transition-colors
-              
               `}
             >
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
-            </Link>
+              <span className="hidden sm:inline">
+                {isSettingsOpen ? "Close" : "Settings"} {/* Dynamically rename the button */}
+              </span>
+            </button>
 
             {authUser && (
               <>
@@ -52,4 +69,5 @@ const Navbar = () => {
     </header>
   );
 };
+
 export default Navbar;

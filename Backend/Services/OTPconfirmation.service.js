@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import Token from "../Components/JWT.js";
-import OTPmodel from "../Model/OTPmodel.js";
+import OTPmodel from "../Model/OTPmodel.model.js";
 import CustomError from "../Components/CustomError.js";
-import UserModel from '../Model/AccountModel.js'
+import UserModel from '../Model/AccountModel.model.js'
 
 // this needs to be reviewed
 const OTPconfirmation = async (req, res, next) => {
@@ -34,4 +34,4 @@ const OTPconfirmation = async (req, res, next) => {
     }
 }
 
-export default otpConfirmation_service;
+export default OTPconfirmation;

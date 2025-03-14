@@ -10,4 +10,4 @@ router.get('/:id', Token.compareToken, message_service.getMessage);
 router.post('/send/:id', Token.compareToken, message_service.sendMessage);
 
 
-export default message_route;
+export default router;
